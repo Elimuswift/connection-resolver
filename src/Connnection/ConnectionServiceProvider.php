@@ -16,19 +16,28 @@ class ConnectionServiceProvider extends ServiceProvider
     }
 
     public function boot(Resolver $resolver){
-        $this->publishes(array(
-            realpath(__DIR__.'/../migrations') => database_path('migrations')
-        ));
-
-        //resolve tenant, catch PDOExceptions to prevent errors during migration
+        $this->mergeConfigFrom(
+            realpath(__DIR__ .'/../').'/config/elimuswift.php', 'elimuswift'
+        );
+         //resolve tenant, catch PDOExceptions to prevent errors during migration
         try {
-        	$resolver->resolveTenant();
+            $resolver->resolveTenant();
             if(!$resolver->isResolved()){
                 //abort('404');
             }
         } catch( \PDOException $e ) {
-            //abort('404');
+            throw new Exceptions\TenantNotResolvedException("Tenant not resolved or does not exist");
          }
+
+        $this->publishes(array(
+            realpath(__DIR__.'/../migrations') => database_path('migrations')
+        ),'migrations');
+
+         if ($this->app->runningInConsole()) {
+            $this->commands([
+                Commands\HandleResolver::class,
+            ]);
+        }
 
     }
 

@@ -1,0 +1,21 @@
+{
+    "name": "elimuswift/connection-resolver",
+    "description": "A laravel package that dynamically switches between different database connections",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Master Weez",
+            "email": "wizqydy@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Elimuswift\\Connection": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "require": {
+        "laravel/framework": "~5.2"
+    }
+}

@@ -7,6 +7,8 @@ namespace Elimuswift\Connection;
  * @package supervisor-config
  * @author The Weezqyd
  **/
+use Exception;
+
 class SupervisorConfiguration
 {
     /**
@@ -32,12 +34,6 @@ redirect_stderr = true
 stdout_logfile = {PATH}/storage/logs/worker.log';
 
      
-
-    public function __construct(Tenant $tenant)
-    {
-        $this->tenant = $tenant;
-    }
-
     /**
      * Set the config values
      *
@@ -63,10 +59,36 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
     public function create()
     {
         $configs = $this->set();
-        $this->save($configs);
-        return $configs;
+        return $this->save($configs);
+    
+    }
+    /**
+     * Set tenant object
+     *
+     * @return void
+     * @param object $tenant 
+     **/
+    private function setTenant(Tenant $tenant)
+    {
+        $this->tenant = $tenant;
     }
 
+    /**
+     * Get tenant from storage
+     *
+     * @return void
+     * @param mixed $tenant 
+     **/
+    public function getTenant($tenant)
+    {
+        $model = new Tenant();
+
+        $instance = $model->whereId($tenant)->orWhere('uuid',$tenant)->orWhere('domain', $tenant)->first();
+        if(is_null($instance))
+            throw new Exceptions\TenantNotResolvedException("Tenant not resolved or does not exist");
+            
+        $this->setTenant($instance);
+    }
     /**
      * undocumented function
      *
@@ -75,6 +97,8 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
      **/
     protected function save($conf)
     {
-        return file_put_contents(base_path('supervisor/elimuswift-'.$this->tenant->uuid.'.conf'), $conf);
+        $file = base_path('supervisor/elimuswift-'.$this->tenant->uuid.'.conf');
+        file_put_contents($file, $conf);
+        return $file;
     }
 } // END class SupervisorConfiguration
