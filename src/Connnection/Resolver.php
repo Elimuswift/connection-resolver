@@ -225,7 +225,7 @@ class Resolver
                         $this->setActiveTenant($tenant);
                         $event->getOutput()->writeln('<info>Running command for ' . $this->getActiveTenant()->domain . '</info>');
                         try {
-                            $exitCode = $command->run($input, $output);
+                            $command->run($input, $output);
                         } catch (\Exception $e) {
                             $event = new ConsoleExceptionEvent($command, $input, $output, $e, $e->getCode());
                             $this->getConsolerDispatcher()->dispatch(ConsoleEvents::EXCEPTION, $event);
