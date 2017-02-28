@@ -25,6 +25,9 @@ class ConnectionServiceProvider extends ServiceProvider
         } catch( \PDOException $e ) {
             throw new Exceptions\TenantNotResolvedException("Tenant not resolved or does not exist");
          }
+         catch(Exceptions\TenantNotResolvedException $errr){
+            // fallback to default connection
+         }
 
         $this->publishes(array(
             realpath(__DIR__.'/../migrations') => database_path('migrations')
