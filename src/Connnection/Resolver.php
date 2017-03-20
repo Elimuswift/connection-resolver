@@ -58,6 +58,16 @@ class Resolver
 
 //end isResolved()
 
+    /**
+     * Set the default db connection.
+     *
+     * @property string $driver
+     * @property string $host
+     * @property string $database
+     * @property string $username
+     * @property string $uuid
+     * @property string $prefix
+     */
     public function setDefaultConnection()
     {
         $tenant = $this->getActiveTenant();
