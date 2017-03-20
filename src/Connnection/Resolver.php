@@ -1,20 +1,19 @@
 <?php
+
 namespace Elimuswift\Connection;
 
-use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Application;
+use Symfony\Component\Console\ConsoleEvents;
+use Illuminate\Console\Application as Artisan;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Input\InputOption;
+use Elimuswift\Connection\Events\TenantResolvedEvent;
 use Elimuswift\Connection\Events\SetActiveTenantEvent;
 use Elimuswift\Connection\Events\TenantNotResolvedEvent;
-use Elimuswift\Connection\Events\TenantResolvedEvent;
-use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Event\ConsoleExceptionEvent;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
-use Symfony\Component\Console\Input\ArgvInput;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\EventDispatcher\EventDispatcher;
-use Illuminate\Console\Application as Artisan;
-use Illuminate\Console\Events\ArtisanStarting;
 
 class Resolver
 {
@@ -26,9 +25,12 @@ class Resolver
 
     private $consoleDispatcher = false;
 
-    public function __construct(Application $app){
+    public function __construct(Application $app)
+    {
         $this->app = $app;
     }
+
+//end __construct()
 
     public function setActiveTenant(Tenant $activeTenant)
     {
@@ -40,17 +42,24 @@ class Resolver
         event(new SetActiveTenantEvent($this->activeTenant));
     }
 
+//end setActiveTenant()
+
     public function getActiveTenant()
     {
         return $this->activeTenant;
     }
 
-    public function isResolved(){
+//end getActiveTenant()
+
+    public function isResolved()
+    {
         return !is_null($this->getActiveTenant());
     }
 
-    public function setDefaultConnection(){
+//end isResolved()
 
+    public function setDefaultConnection()
+    {
         $tenant = $this->getActiveTenant();
         config()->set('database.connections.tenant.driver', $tenant->driver);
         config()->set('database.connections.tenant.host', $tenant->host);
@@ -58,191 +67,233 @@ class Resolver
         config()->set('database.connections.tenant.username', $tenant->username);
         config()->set('database.connections.tenant.password', $tenant->password);
         config()->set('elimuswift.database.default', $tenant->uuid);
+        config()->set('queue.failed.database', 'tenant');
 
-        if(!empty($tenant->prefix)) {
+        if (!empty($tenant->prefix)) {
             $tenant->prefix .= '_';
         }
+
         config()->set('database.connections.tenant.prefix', $tenant->prefix);
         if ($tenant->driver == 'mysql') {
             config()->set('database.connections.tenant.strict', config('database.connections.mysql.strict'));
         }
+
         config()->set('database.connections.tenant.charset', 'utf8');
         config()->set('database.connections.tenant.collation', 'utf8_unicode_ci');
         $this->app['db']->purge('tenant');
         $this->app['db']->setDefaultConnection('tenant');
     }
 
-    public function resolveTenant(){
+//end setDefaultConnection()
 
-        //register artisan events
+    public function resolveTenant()
+    {
+        // register artisan events
         $this->registerTenantConsoleArgument();
 
         $this->registerConsoleStartEvent();
 
         $this->registerConsoleTerminateEvent();
 
-        //resolve by request type
-        if($this->app->runningInConsole()){
+        // resolve by request type
+        if ($this->app->runningInConsole()) {
             $this->resolveByConsole();
-        }else{
+        } else {
             $this->resolveByRequest();
         }
     }
 
-    public function purgeTenantConnection(){
-        $this->app['db']->setDefaultConnection(config('tenantable.database.default'));
+//end resolveTenant()
+
+    public function purgeTenantConnection()
+    {
+        $this->app['db']->setDefaultConnection(config('db-resolver.database.default'));
     }
 
-    public function reconnectTenantConnection(){
+//end purgeTenantConnection()
+
+    public function reconnectTenantConnection()
+    {
         $this->app['db']->setDefaultConnection('tenant');
     }
 
-    private function resolveByRequest(){
-        $this->request = $this->app->make(Request::class);
+//end reconnectTenantConnection()
+
+    private function resolveByRequest()
+    {
+        $this->request = $this->app->make('Illuminate\Http\Request');
         $domain = $this->request->getHost();
 
-        //find tenant by primary domain
+        // find tenant by primary domain
         $model = new Tenant();
         $tenant = $model->where('domain', '=', $domain)->first();
-        if($tenant instanceof Tenant){
+        if ($tenant instanceof Tenant) {
             $this->setActiveTenant($tenant);
             event(new TenantResolvedEvent($tenant));
+
             return;
         }
 
-        //if were here the domain could not be found in the primary table
+        // if were here the domain could not be found in the primary table
         $model = new Domain();
         $tenant = $model->where('domain', '=', $domain)->first();
-        if($tenant instanceof Domain){
+        if ($tenant instanceof Domain) {
             $returnModel = $tenant->tenant;
             $this->setActiveTenant($returnModel);
             event(new TenantResolvedEvent($returnModel));
+
             return;
         }
 
-        //if were here we haven't found anything?
+        // if were here we haven't found anything?
         event(new TenantNotResolvedEvent($this));
+
         return;
     }
 
-    private function resolveByConsole(){
+//end resolveByRequest()
 
+    private function resolveByConsole()
+    {
         $domain = (new ArgvInput())->getParameterOption('--tenant', null);
 
-
-        //find tenant by primary domain
+        // find tenant by primary domain
         $model = new Tenant();
         $tenant = $model->where('domain', '=', $domain)->first();
-        if($tenant instanceof Tenant){
+        if ($tenant instanceof Tenant) {
             $this->setActiveTenant($tenant);
             event(new TenantResolvedEvent($tenant));
+
             return;
         }
 
-        //find by uuid
+        // find by uuid
         $tenant = $model->where('uuid', '=', $domain)->first();
-        if($tenant instanceof Tenant){
+        if ($tenant instanceof Tenant) {
             $this->setActiveTenant($tenant);
             event(new TenantResolvedEvent($tenant));
+
             return;
         }
 
-        //find by id
+        // find by id
         $tenant = $model->where('id', '=', $domain)->first();
-        if($tenant instanceof Tenant){
+        if ($tenant instanceof Tenant) {
             $this->setActiveTenant($tenant);
             event(new TenantResolvedEvent($tenant));
+
             return;
         }
 
-        //if were here the domain could not be found in the primary table
+        // if were here the domain could not be found in the primary table
         $model = new Domain();
         $tenant = $model->where('domain', '=', $domain)->first();
-        if($tenant instanceof Domain){
+        if ($tenant instanceof Domain) {
             $returnModel = $tenant->tenant;
             $this->setActiveTenant($returnModel);
             event(new TenantResolvedEvent($returnModel));
+
             return;
         }
 
-        //if were here we haven't found anything?
+        // if were here we haven't found anything?
         event(new TenantNotResolvedEvent($this));
+
         return;
     }
 
-    private function getConsolerDispatcher(){
-        if(!$this->consoleDispatcher){
-            $this->consoleDispatcher = app(EventDispatcher::class);
+//end resolveByConsole()
+
+    private function getConsolerDispatcher()
+    {
+        if (!$this->consoleDispatcher) {
+            $this->consoleDispatcher = app('Symfony\Component\EventDispatcher\EventDispatcher');
         }
+
         return $this->consoleDispatcher;
     }
 
-    private function registerTenantConsoleArgument(){
-        //register --tenant option for console
-        $this->app['events']->listen(ArtisanStarting::class, function($event){
-            $definition = $event->artisan->getDefinition();
-            $definition->addOption(new InputOption('--tenant', null, InputOption::VALUE_OPTIONAL, 'The tenant the command should be run for (id,uuid,domain).'));
-            $event->artisan->setDefinition($definition);
-            $event->artisan->setDispatcher($this->getConsolerDispatcher());
-        });
-    }
+//end getConsolerDispatcher()
 
-    private function registerConsoleStartEvent(){
-        //possibly disable the command
-        $this->getConsolerDispatcher()->addListener(ConsoleEvents::COMMAND, function(ConsoleCommandEvent $event){
-            $tenant = $event->getInput()->getParameterOption('--tenant', null);
-            if(!is_null($tenant)){
-                if($tenant == '*' || $tenant == 'all'){
-                    $event->disableCommand();
-                }else{
-                    if($this->isResolved()) {
-                        $event->getOutput()->writeln('<info>Running command for ' . $this->getActiveTenant()->domain . '</info>');
-                    }else{
-                        $event->getOutput()->writeln('<error>Failed to resolve tenant</error>');
-                        $event->disableCommand();
-                    }
-                }
+    private function registerTenantConsoleArgument()
+    {
+        // register --tenant option for console
+        $this->app['events']->listen(
+            'Illuminate\Console\Events\ArtisanStarting',
+            function ($event) {
+                $definition = $event->artisan->getDefinition();
+                $definition->addOption(new InputOption('--tenant', null, InputOption::VALUE_OPTIONAL, 'The tenant the command should be run for (id,uuid,domain).'));
+                $event->artisan->setDefinition($definition);
+                $event->artisan->setDispatcher($this->getConsolerDispatcher());
             }
-        });
+        );
     }
 
-    private function registerConsoleTerminateEvent(){
-        //run command on the terminate event instead
-        $this->getConsolerDispatcher()->addListener(ConsoleEvents::TERMINATE, function(ConsoleTerminateEvent $event){
+//end registerTenantConsoleArgument()
 
-            $tenant = $event->getInput()->getParameterOption('--tenant', null);
-            if(!is_null($tenant)){
-                if($tenant == '*' || $tenant == 'all'){
-                    //run command for all
-                    $command = $event->getCommand();
-                    $input = $event->getInput();
-                    $output = $event->getOutput();
-                    $exitcode = $event->getExitCode();
-
-                    $tenants = Tenant::all();
-                    foreach($tenants as $tenant) {
-                        //set tenant
-                        $this->setActiveTenant($tenant);
-                        $event->getOutput()->writeln('<info>Running command for ' . $this->getActiveTenant()->domain . '</info>');
-                        try {
-                            $command->run($input, $output);
-                        } catch (\Exception $e) {
-                            $event = new ConsoleExceptionEvent($command, $input, $output, $e, $e->getCode());
-                            $this->getConsolerDispatcher()->dispatch(ConsoleEvents::EXCEPTION, $event);
-
-                            $e = $event->getException();
-
-                            throw $e;
+    private function registerConsoleStartEvent()
+    {
+        // possibly disable the command
+        $this->getConsolerDispatcher()->addListener(
+            ConsoleEvents::COMMAND,
+            function (ConsoleCommandEvent $event) {
+                $tenant = $event->getInput()->getParameterOption('--tenant', null);
+                if (!is_null($tenant)) {
+                    if ($tenant == '*' || $tenant == 'all') {
+                        $event->disableCommand();
+                    } else {
+                        if ($this->isResolved()) {
+                            $event->getOutput()->writeln('<info>Running command for '.$this->getActiveTenant()->domain.'</info>');
+                        } else {
+                            $event->getOutput()->writeln('<error>Failed to resolve tenant</error>');
+                            $event->disableCommand();
                         }
                     }
-
-                    $event->setExitCode($exitcode);
-
                 }
             }
-
-        });
+        );
     }
 
+//end registerConsoleStartEvent()
 
-}
+    private function registerConsoleTerminateEvent()
+    {
+        // run command on the terminate event instead
+        $this->getConsolerDispatcher()->addListener(
+            ConsoleEvents::TERMINATE,
+            function (ConsoleTerminateEvent $event) {
+                $tenant = $event->getInput()->getParameterOption('--tenant', null);
+                if (!is_null($tenant)) {
+                    if ($tenant == '*' || $tenant == 'all') {
+                        // run command for all
+                        $command = $event->getCommand();
+                        $input = $event->getInput();
+                        $output = $event->getOutput();
+                        $exitcode = $event->getExitCode();
+
+                        $tenants = Tenant::all();
+                        foreach ($tenants as $tenant) {
+                            // set tenant
+                            $this->setActiveTenant($tenant);
+                            $event->getOutput()->writeln('<info>Running command for '.$this->getActiveTenant()->domain.'</info>');
+                            try {
+                                $command->run($input, $output);
+                            } catch (\Exception $e) {
+                                $event = new ConsoleExceptionEvent($command, $input, $output, $e, $e->getCode());
+                                $this->getConsolerDispatcher()->dispatch(ConsoleEvents::EXCEPTION, $event);
+
+                                $e = $event->getException();
+
+                                throw $e;
+                            }
+                        }
+
+                        $event->setExitCode($exitcode);
+                    }//end if
+                }//end if
+            }
+        );
+    }
+
+//end registerConsoleTerminateEvent()
+}//end class

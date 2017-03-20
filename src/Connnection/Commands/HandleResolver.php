@@ -8,7 +8,7 @@ use Elimuswift\Connection\SupervisorConfiguration;
 class HandleResolver extends Command
 {
     /**
-     * The supervisor config repository
+     * The supervisor config repository.
      *
      * @var object
      **/
@@ -19,7 +19,7 @@ class HandleResolver extends Command
      *
      * @var string
      */
-    protected $signature = 'db-resolver:make-worker {tenant : The tenant\'s id or uuid or domain}';
+    protected $signature = 'db-resolver:make-worker {tenant : The tenant\'s id or uuid or domain} {--path= : The absolute path to create file it must end with (/)}';
 
     /**
      * The console command description.
@@ -28,6 +28,7 @@ class HandleResolver extends Command
      */
     protected $description = 'Create a supervisor config file for the specified tenant';
 
+
     /**
      * Create a new command instance.
      */
@@ -35,18 +36,22 @@ class HandleResolver extends Command
     {
         $this->supervisor = $config;
         parent::__construct();
-    }
+
+    }//end __construct()
+
 
     /**
      * Execute the console command.
-     *
-     * @return mixed
      */
     public function handle()
     {
         $this->supervisor->getTenant($this->argument('tenant'));
-        $file = $this->supervisor->create();
+
+        $path = $this->option('path') ? $this->option('path') : bas_path();
+        $file = $this->supervisor->create($path);
         $this->info("Config file $file created");
 
-    }
-}
+    }//end handle()
+
+
+}//end class

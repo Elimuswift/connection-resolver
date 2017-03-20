@@ -1,25 +1,25 @@
 <?php
+
 namespace Elimuswift\Connection;
 
-/**
- * Create a configuration file for supervisor
- *
- * @package supervisor-config
- * @author The Weezqyd
+/*
+    * Create a configuration file for supervisor
+    *
+    * @package supervisor-config
+    * @author The Weezqyd
  **/
-use Exception;
 
 class SupervisorConfiguration
 {
     /**
-     * Tenant model instance
+     * Tenant model instance.
      *
      * @var mixed
      **/
     protected $tenant;
 
     /**
-     * config options
+     * config options.
      *
      * @var string
      **/
@@ -33,72 +33,82 @@ numprocs = 4
 redirect_stderr = true 
 stdout_logfile = {PATH}/storage/logs/worker.log';
 
-     
+
     /**
-     * Set the config values
+     * Set the config values.
      *
-     * @return void
      * @param $configs array
      **/
-
-    private function set()
+    private function set($path)
     {
-        $conf = $this->configs;
-        $path = str_replace('{PATH}', base_path(), $conf);
+        $conf   = $this->configs;
+        $path   = str_replace('{PATH}', $path, $conf);
         $config = str_replace('{UUID}', $this->tenant->uuid, $path);
-        
+
         return $config;
-    }
+
+    }//end set()
+
 
     /**
-     * Create Configuration and sace to file
+     * Create Configuration and sace to file.
      *
-     * @return void
      * @author
      **/
-    public function create()
+    public function create($path)
     {
-        $configs = $this->set();
-        return $this->save($configs);
-    
-    }
+        $configs = $this->set($path);
+
+        return $this->save($configs, $path);
+
+    }//end create()
+
+
     /**
-     * Set tenant object
+     * Set tenant object.
      *
-     * @return void
-     * @param object $tenant 
+     * @param object $tenant
      **/
     private function setTenant(Tenant $tenant)
     {
         $this->tenant = $tenant;
-    }
+
+    }//end setTenant()
+
 
     /**
-     * Get tenant from storage
+     * Get tenant from storage.
      *
-     * @return void
-     * @param mixed $tenant 
+     * @param mixed $tenant
      **/
     public function getTenant($tenant)
     {
         $model = new Tenant();
 
-        $instance = $model->whereId($tenant)->orWhere('uuid',$tenant)->orWhere('domain', $tenant)->first();
-        if(is_null($instance))
-            throw new Exceptions\TenantNotResolvedException("Tenant not resolved or does not exist");
-            
+        $instance = $model->whereId($tenant)->orWhere('uuid', $tenant)->orWhere('domain', $tenant)->first();
+        if (is_null($instance)) {
+            throw new Exceptions\TenantNotResolvedException('Tenant not resolved or does not exist');
+        }
+
         $this->setTenant($instance);
-    }
+
+    }//end getTenant()
+
+
     /**
-     * undocumented function
+     * undocumented function.
      *
-     * @return void
      * @author
      **/
-    protected function save($conf)
+    protected function save($conf, $path)
     {
-        $file = base_path('supervisor/elimuswift-'.$this->tenant->uuid.'.conf');
+        $file = $path.'supervisor/elimuswift-'.$this->tenant->uuid.'.conf';
         file_put_contents($file, $conf);
+
         return $file;
-    }
-} // END class SupervisorConfiguration
+
+    }//end save()
+
+
+}//end class
+ // END class SupervisorConfiguration

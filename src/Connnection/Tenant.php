@@ -8,9 +8,20 @@ use Illuminate\Support\Facades\DB;
 
 class Tenant extends Model
 {
-
+    /**
+     * Connection to use
+     * @var string
+     */
+    protected $connection = 'tenant';
+    /**
+     * Database table
+     * @var string
+     */
     protected $table = 'tenants';
-
+    /**
+     * Fillable fields
+     * @var array
+     */
     protected $fillable = [
         'uuid',
         'domain',
@@ -22,7 +33,10 @@ class Tenant extends Model
         'prefix',
         'meta'
     ];
-
+    /**
+     * Type casting 
+     * @var array
+     */
     protected $casts = [
         'uuid' => 'string',
         'domain' => 'string',
