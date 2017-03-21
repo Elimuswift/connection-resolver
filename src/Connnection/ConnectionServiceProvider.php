@@ -6,8 +6,6 @@ use Illuminate\Support\ServiceProvider;
 
 class ConnectionServiceProvider extends ServiceProvider
 {
-
-
     public function register()
     {
         $this->app->singleton(
@@ -16,9 +14,9 @@ class ConnectionServiceProvider extends ServiceProvider
                 return new Resolver($app);
             }
         );
+    }
 
-    }//end register()
-
+//end register()
 
     public function boot(Resolver $resolver)
     {
@@ -29,12 +27,10 @@ class ConnectionServiceProvider extends ServiceProvider
         try {
             $resolver->resolveTenant();
         } catch (\PDOException $e) {
-            throw new Exceptions\TenantNotResolvedException('Tenant not resolved or does not exist');
-        } catch (Exceptions\TenantNotResolvedException $errr) {
             $resolver->purgeTenantConnection();
         }
 
-            $this->publishes(
+        $this->publishes(
                 [
                  realpath(__DIR__.'/../migrations') => database_path('migrations'),
                 ],
@@ -46,8 +42,7 @@ class ConnectionServiceProvider extends ServiceProvider
                 [Commands\HandleResolver::class]
             );
         }
+    }
 
-    }//end boot()
-
-
+//end boot()
 }//end class
