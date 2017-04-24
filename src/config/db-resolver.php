@@ -3,6 +3,6 @@
 return [
         'database' => [
                        'default' => 'mysql',
-                       'tenant'  => 'demo',
+                       'tenant' => 'demo',
                       ],
        ];

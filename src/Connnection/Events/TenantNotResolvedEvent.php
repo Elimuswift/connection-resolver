@@ -1,6 +1,6 @@
 <?php
-namespace Elimuswift\Connection\Events;
 
+namespace Elimuswift\Connection\Events;
 
 use Elimuswift\Connection\Resolver;
 

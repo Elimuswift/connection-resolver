@@ -1,8 +1,7 @@
 <?php
-namespace Elimuswift\Connection\Events;
 
+namespace Elimuswift\Connection\Events;
 
 class SetActiveTenantEvent extends TenantableEvent
 {
-
 }

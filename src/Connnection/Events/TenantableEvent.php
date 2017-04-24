@@ -1,4 +1,5 @@
 <?php
+
 namespace Elimuswift\Connection\Events;
 
 use Illuminate\Queue\SerializesModels;
@@ -14,5 +15,4 @@ abstract class TenantableEvent
     {
         $this->tenant = $tenant;
     }
-
 }

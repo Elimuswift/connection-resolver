@@ -4,16 +4,14 @@ use \Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateTenantsTable extends Migration {
-
-    /** 
+class CreateTenantsTable extends Migration
+{
+    /**
      * Run the migrations.
-     *
-     * @return void
      */
     public function up()
     {
-        Schema::create('tenants', function(Blueprint $table){
+        Schema::create('tenants', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
             $table->increments('id');
@@ -32,13 +30,9 @@ class CreateTenantsTable extends Migration {
 
     /**
      * Reverse the migrations.
-     *
-     * @return void
      */
     public function down()
     {
-        //
         Schema::drop('tenants');
     }
-
 }

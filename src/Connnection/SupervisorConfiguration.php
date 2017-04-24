@@ -33,7 +33,6 @@ numprocs = 4
 redirect_stderr = true 
 stdout_logfile = {PATH}/storage/logs/worker.log';
 
-
     /**
      * Set the config values.
      *
@@ -41,14 +40,14 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
      **/
     private function set($path)
     {
-        $conf   = $this->configs;
-        $path   = str_replace('{PATH}', $path, $conf);
+        $conf = $this->configs;
+        $path = str_replace('{PATH}', $path, $conf);
         $config = str_replace('{UUID}', $this->tenant->uuid, $path);
 
         return $config;
+    }
 
-    }//end set()
-
+//end set()
 
     /**
      * Create Configuration and sace to file.
@@ -60,9 +59,9 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
         $configs = $this->set($path);
 
         return $this->save($configs, $path);
+    }
 
-    }//end create()
-
+//end create()
 
     /**
      * Set tenant object.
@@ -72,9 +71,9 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
     private function setTenant(Tenant $tenant)
     {
         $this->tenant = $tenant;
+    }
 
-    }//end setTenant()
-
+//end setTenant()
 
     /**
      * Get tenant from storage.
@@ -91,9 +90,9 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
         }
 
         $this->setTenant($instance);
+    }
 
-    }//end getTenant()
-
+//end getTenant()
 
     /**
      * undocumented function.
@@ -102,13 +101,12 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
      **/
     protected function save($conf, $path)
     {
-        $file = $path.'supervisor/elimuswift-'.$this->tenant->uuid.'.conf';
+        $file = $path . 'supervisor/elimuswift-' . $this->tenant->uuid . '.conf';
         file_put_contents($file, $conf);
 
         return $file;
+    }
 
-    }//end save()
-
-
+//end save()
 }//end class
  // END class SupervisorConfiguration

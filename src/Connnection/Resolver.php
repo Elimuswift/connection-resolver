@@ -253,7 +253,7 @@ class Resolver
                         $event->disableCommand();
                     } else {
                         if ($this->isResolved()) {
-                            $event->getOutput()->writeln('<info>Running command for '.$this->getActiveTenant()->domain.'</info>');
+                            $event->getOutput()->writeln('<info>Running command for ' . $this->getActiveTenant()->domain . '</info>');
                         } else {
                             $event->getOutput()->writeln('<error>Failed to resolve tenant</error>');
                             $event->disableCommand();
@@ -285,7 +285,7 @@ class Resolver
                         foreach ($tenants as $tenant) {
                             // set tenant
                             $this->setActiveTenant($tenant);
-                            $event->getOutput()->writeln('<info>Running command for '.$this->getActiveTenant()->domain.'</info>');
+                            $event->getOutput()->writeln('<info>Running command for ' . $this->getActiveTenant()->domain . '</info>');
                             try {
                                 $command->run($input, $output);
                             } catch (\Exception $e) {

@@ -28,7 +28,6 @@ class HandleResolver extends Command
      */
     protected $description = 'Create a supervisor config file for the specified tenant';
 
-
     /**
      * Create a new command instance.
      */
@@ -36,9 +35,9 @@ class HandleResolver extends Command
     {
         $this->supervisor = $config;
         parent::__construct();
+    }
 
-    }//end __construct()
-
+//end __construct()
 
     /**
      * Execute the console command.
@@ -50,8 +49,7 @@ class HandleResolver extends Command
         $path = $this->option('path') ? $this->option('path') : bas_path();
         $file = $this->supervisor->create($path);
         $this->info("Config file $file created");
+    }
 
-    }//end handle()
-
-
+//end handle()
 }//end class
