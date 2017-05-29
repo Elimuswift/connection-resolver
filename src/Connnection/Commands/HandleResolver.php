@@ -19,7 +19,7 @@ class HandleResolver extends Command
      *
      * @var string
      */
-    protected $signature = 'db-resolver:make-worker {tenant : The tenant\'s id or uuid or domain} {--path= : The absolute path to create file it must end with (/)}';
+    protected $signature = 'db-resolver:make-worker {tenant : The tenant\'s id or uuid or domain} {--path= : The absolute path to create file}';
 
     /**
      * The console command description.
@@ -46,8 +46,8 @@ class HandleResolver extends Command
     {
         $this->supervisor->getTenant($this->argument('tenant'));
 
-        $path = $this->option('path') ? $this->option('path') : bas_path();
-        $file = $this->supervisor->create($path);
+        $path = $this->option('path') ? $this->option('path') : config('db-resolver.configurationPath');
+        $file = $this->supervisor->create($path, config('db-resolver.basePath'), config('db-resolver.user'));
         $this->info("Config file $file created");
     }
 

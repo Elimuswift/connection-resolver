@@ -28,7 +28,7 @@ process_name = %(program_name)s_%(process_num)02d
 command = php {PATH}/artisan queue:work --sleep=3 --tries=3 --tenant={UUID} 
 autostart = true 
 autorestart = true 
-user = weez 
+user = {USER} 
 numprocs = 4 
 redirect_stderr = true 
 stdout_logfile = {PATH}/storage/logs/worker.log';
@@ -38,13 +38,9 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
      *
      * @param $configs array
      **/
-    private function set($path)
+    protected function set($path, $user)
     {
-        $conf = $this->configs;
-        $path = str_replace('{PATH}', $path, $conf);
-        $config = str_replace('{UUID}', $this->tenant->uuid, $path);
-
-        return $config;
+        return str_replace(['{UUID}', '{USER}', '{PATH}'], [$this->tenant->uuid, $user, $path], $this->configs);
     }
 
 //end set()
@@ -52,11 +48,11 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
     /**
      * Create Configuration and sace to file.
      *
-     * @author
+     * @param string $path Storage location for the config file
      **/
-    public function create($path)
+    public function create($path, $basePath, $user)
     {
-        $configs = $this->set($path);
+        $configs = $this->set($basePath, $user);
 
         return $this->save($configs, $path);
     }
@@ -66,9 +62,9 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
     /**
      * Set tenant object.
      *
-     * @param object $tenant
+     * @param Tenant $tenant
      **/
-    private function setTenant(Tenant $tenant)
+    protected function setTenant(Tenant $tenant)
     {
         $this->tenant = $tenant;
     }
@@ -101,7 +97,7 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
      **/
     protected function save($conf, $path)
     {
-        $file = $path . 'supervisor/elimuswift-' . $this->tenant->uuid . '.conf';
+        $file = $path.'/elimuswift-'.$this->tenant->uuid.'.conf';
         file_put_contents($file, $conf);
 
         return $file;
