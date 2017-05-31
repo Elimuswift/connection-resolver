@@ -2,13 +2,11 @@
 
 namespace Elimuswift\Connection;
 
-/*
-    * Create a configuration file for supervisor
-    *
-    * @package supervisor-config
-    * @author The Weezqyd
+/**
+ * Create a configuration file for supervisor.
+ *
+ * @author The Weezqyd <wizqydy@gmail.com>
  **/
-
 class SupervisorConfiguration
 {
     /**
@@ -38,9 +36,9 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
      *
      * @param $configs array
      **/
-    protected function set($path, $user)
+    protected function set($basPath, $user)
     {
-        return str_replace(['{UUID}', '{USER}', '{PATH}'], [$this->tenant->uuid, $user, $path], $this->configs);
+        return str_replace(['{UUID}', '{USER}', '{PATH}'], [$this->tenant->uuid, $user, $basPath], $this->configs);
     }
 
 //end set()
@@ -74,7 +72,11 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
     /**
      * Get tenant from storage.
      *
-     * @param mixed $tenant
+     * @param string $tenant UUID ID or domain for the tenant
+     *
+     * @throws TenantNotResolvedException
+     *
+     * @return Tenant
      **/
     public function getTenant($tenant)
     {
@@ -93,12 +95,14 @@ stdout_logfile = {PATH}/storage/logs/worker.log';
     /**
      * undocumented function.
      *
-     * @author
+     * @return string $file The location where the fle was created
      **/
     protected function save($conf, $path)
     {
         $file = $path.'/elimuswift-'.$this->tenant->uuid.'.conf';
-        file_put_contents($file, $conf);
+        if (!file_put_contents($file, $conf)) {
+            throw new Exceptions\ErrorException('Error while creating the config file. Please check if the location is writable');
+        }
 
         return $file;
     }

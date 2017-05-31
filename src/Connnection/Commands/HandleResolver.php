@@ -3,7 +3,7 @@
 namespace Elimuswift\Connection\Commands;
 
 use Illuminate\Console\Command;
-use Elimuswift\Connection\SupervisorConfiguration;
+use Elimuswift\Connection\SupervisorConfiguration as Supervisor;
 
 class HandleResolver extends Command
 {
@@ -30,8 +30,10 @@ class HandleResolver extends Command
 
     /**
      * Create a new command instance.
+     *
+     * @param Supervisor $config The supervisor config repository
      */
-    public function __construct(SupervisorConfiguration $config)
+    public function __construct(Supervisor $config)
     {
         $this->supervisor = $config;
         parent::__construct();
