@@ -3,7 +3,6 @@
 namespace Elimuswift\Connection;
 
 use Illuminate\Http\Request;
-use Illuminate\Foundation\Application;
 use Symfony\Component\Console\ConsoleEvents;
 use Illuminate\Console\Application as Artisan;
 use Symfony\Component\Console\Input\ArgvInput;
@@ -25,7 +24,7 @@ class Resolver
 
     private $consoleDispatcher = false;
 
-    public function __construct(Application $app)
+    public function __construct($app)
     {
         $this->app = $app;
     }
@@ -109,6 +108,7 @@ class Resolver
         if ($this->app->runningInConsole()) {
             $this->resolveByConsole();
         } else {
+            $this->resolveByHeader();
             $this->resolveByRequest();
         }
     }
@@ -132,33 +132,19 @@ class Resolver
     private function resolveByRequest()
     {
         $this->request = $this->app->make('Illuminate\Http\Request');
+
         $domain = $this->request->getHost();
 
-        // find tenant by primary domain
-        $model = new Tenant();
-        $tenant = $model->where('domain', '=', $domain)->first();
-        if ($tenant instanceof Tenant) {
-            $this->setActiveTenant($tenant);
-            event(new TenantResolvedEvent($tenant));
+        $this->resolve($domain);
+    }
 
-            return;
-        }
+    private function resolveByHeader()
+    {
+        $this->request = $this->app->make('Illuminate\Http\Request');
 
-        // if were here the domain could not be found in the primary table
-        $model = new Domain();
-        $tenant = $model->where('domain', '=', $domain)->first();
-        if ($tenant instanceof Domain) {
-            $returnModel = $tenant->tenant;
-            $this->setActiveTenant($returnModel);
-            event(new TenantResolvedEvent($returnModel));
+        $uuid = $this->request->headers->get(config('db-resolver.Tenant-Header-Name'));
 
-            return;
-        }
-
-        // if were here we haven't found anything?
-        event(new TenantNotResolvedEvent($this));
-
-        return;
+        $this->resolve($uuid);
     }
 
 //end resolveByRequest()
@@ -167,49 +153,7 @@ class Resolver
     {
         $domain = (new ArgvInput())->getParameterOption('--tenant', null);
 
-        // find tenant by primary domain
-        $model = new Tenant();
-        $tenant = $model->where('domain', '=', $domain)->first();
-        if ($tenant instanceof Tenant) {
-            $this->setActiveTenant($tenant);
-            event(new TenantResolvedEvent($tenant));
-
-            return;
-        }
-
-        // find by uuid
-        $tenant = $model->where('uuid', '=', $domain)->first();
-        if ($tenant instanceof Tenant) {
-            $this->setActiveTenant($tenant);
-            event(new TenantResolvedEvent($tenant));
-
-            return;
-        }
-
-        // find by id
-        $tenant = $model->where('id', '=', $domain)->first();
-        if ($tenant instanceof Tenant) {
-            $this->setActiveTenant($tenant);
-            event(new TenantResolvedEvent($tenant));
-
-            return;
-        }
-
-        // if were here the domain could not be found in the primary table
-        $model = new Domain();
-        $tenant = $model->where('domain', '=', $domain)->first();
-        if ($tenant instanceof Domain) {
-            $returnModel = $tenant->tenant;
-            $this->setActiveTenant($returnModel);
-            event(new TenantResolvedEvent($returnModel));
-
-            return;
-        }
-
-        // if were here we haven't found anything?
-        event(new TenantNotResolvedEvent($this));
-
-        return;
+        $this->resolve($domain);
     }
 
 //end resolveByConsole()
@@ -221,6 +165,43 @@ class Resolver
         }
 
         return $this->consoleDispatcher;
+    }
+
+    /**
+     * Resolve tenant connection.
+     *
+     * @param string|int $domaint
+     **/
+    protected function resolve($domain)
+    {
+        // find tenant by primary domain
+        $model = new Tenant();
+        $tenant = $model->where('domain', $domain)
+                        ->orWhere('uuid', $domain)
+                        ->orWhere('id', $domain)
+                        ->first();
+        if ($tenant instanceof Tenant) {
+            $this->setActiveTenant($tenant);
+            event(new TenantResolvedEvent($tenant));
+
+            return;
+        }
+
+        // if were here the domain could not be found in the primary table
+        $model = new Domain();
+        $tenant = $model->where('domain', $domain)->first();
+        if ($tenant instanceof Domain) {
+            $returnModel = $tenant->tenant;
+            $this->setActiveTenant($returnModel);
+            event(new TenantResolvedEvent($returnModel));
+
+            return;
+        }
+
+        // if were here we haven't found anything?
+        event(new TenantNotResolvedEvent($this));
+
+        return;
     }
 
 //end getConsolerDispatcher()
@@ -253,7 +234,7 @@ class Resolver
                         $event->disableCommand();
                     } else {
                         if ($this->isResolved()) {
-                            $event->getOutput()->writeln('<info>Running command for ' . $this->getActiveTenant()->domain . '</info>');
+                            $event->getOutput()->writeln('<info>Running command for '.$this->getActiveTenant()->domain.'</info>');
                         } else {
                             $event->getOutput()->writeln('<error>Failed to resolve tenant</error>');
                             $event->disableCommand();
@@ -285,7 +266,7 @@ class Resolver
                         foreach ($tenants as $tenant) {
                             // set tenant
                             $this->setActiveTenant($tenant);
-                            $event->getOutput()->writeln('<info>Running command for ' . $this->getActiveTenant()->domain . '</info>');
+                            $event->getOutput()->writeln('<info>Running command for '.$this->getActiveTenant()->domain.'</info>');
                             try {
                                 $command->run($input, $output);
                             } catch (\Exception $e) {

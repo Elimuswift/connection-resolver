@@ -8,12 +8,9 @@ class ConnectionServiceProvider extends ServiceProvider
 {
     public function register()
     {
-        $this->app->singleton(
-            'Resolver',
-            function ($app) {
-                return new Resolver($app);
-            }
-        );
+        $this->app->bind(Resolver::class, function ($app) {
+            return new Resolver($app);
+        });
     }
 
 //end register()
@@ -21,7 +18,7 @@ class ConnectionServiceProvider extends ServiceProvider
     public function boot(Resolver $resolver)
     {
         $this->mergeConfigFrom(
-            realpath(__DIR__ . '/../') . '/config/db-resolver.php',
+            realpath(__DIR__.'/../').'/config/db-resolver.php',
             'db-resolver'
         );
         try {
@@ -32,7 +29,7 @@ class ConnectionServiceProvider extends ServiceProvider
 
         $this->publishes(
                 [
-                 realpath(__DIR__ . '/../migrations') => database_path('migrations'),
+                 realpath(__DIR__.'/../migrations') => database_path('migrations'),
                 ],
                 'migrations'
             );

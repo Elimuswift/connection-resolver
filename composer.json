@@ -12,10 +12,9 @@
     "autoload": {
         "classmap":"src/Connection",
         "psr-4": {
-            "Elimuswift\\Connection\\": "src/"
+            "Elimuswift\\Connection\\": "src/Connection"
         }
     },
-    "minimum-stability": "dev",
     "require": {
         "laravel/framework": "~5.2"
     }

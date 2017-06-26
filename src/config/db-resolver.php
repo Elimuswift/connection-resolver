@@ -2,7 +2,7 @@
 
 return [
         'database' => [
-                       'default' => 'mysql',
+                       'default' => config('database.default'),
                        'tenant' => 'demo',
                       ],
         'user' => env('USER'),
@@ -14,4 +14,6 @@ return [
         'numProcs' => 4,
 
         'basePath' => base_path(),
+
+        'Tenant-Header-Name' => 'tenant',
        ];
